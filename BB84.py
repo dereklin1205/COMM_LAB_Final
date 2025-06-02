@@ -20,7 +20,8 @@ class BB84Protocol:
         self.bob_results = []
         self.shared_key = []
         self.simulator = AerSimulator()
-        
+        self.detect_array = []
+        self.detect_evesdropping = False
     def generate_random_bits(self):
         """Generate random bits and bases for Alice"""
         self.alice_bits = [random.randint(0, 1) for _ in range(self.key_length)]
@@ -100,7 +101,20 @@ class BB84Protocol:
         print(f"Bit error rate: {error_rate:.2%}")
         
         return self.shared_key
-        
+    def check_evesdropping(self):
+        for i in range(self.key_length//2):
+            if self.alice_bases[i] == self.bob_bases[i]:
+                self.detect_array.append(1)
+            else:
+                self.detect_array.append(0)
+        ## count correct choose of bases    
+        correct_bases = sum(self.detect_array)
+        for i in range(self.key_length//2):
+            if self.detect_array[i] == 1:
+                if self.alice_bits[i] != self.bob_results[i]:
+                    self.detect_evesdropping = True
+                    # print(f"Error detected at index {i}: Alice's bit {self.alice_bits[i]} != Bob's bit {self.bob_results[i]}")
+        print(f"Is there eavesdropping? {self.detect_evesdropping}")
     def run_protocol(self):
         """Execute the complete BB84 protocol"""
         print("=" * 50)
@@ -115,7 +129,8 @@ class BB84Protocol:
         
         print("\n3. Bob measures qubits with random bases")
         self.bob_measure_qubits()
-        
+        print("\n3.1. Check for eavesdropping")
+        self.check_evesdropping()
         print("\n4. Basis comparison and key sifting")
         final_key = self.sift_key()
         
@@ -140,18 +155,21 @@ class BB84Protocol:
         # Alice prepares qubits
         self.circuits = []
         for i in range(self.key_length):
+            ## qc 1 qbit, 1 classical bit
             qc = QuantumCircuit(1, 1)
             
             if self.alice_bits[i] == 1:
-                qc.x(0)
+                qc.x(0) ##apply on 0th bit
             if self.alice_bases[i] == 1:
                 qc.h(0)
                 
             # Eve measures and retransmits
             if eve_bases[i] == 1:
                 qc.h(0)
-            qc.measure(0, 0)
-            
+            # print(qc)
+            #
+            qc.measure(0, 0) #measure the qubit and store result in classical bit 0th
+            # print(qc)
             # Simulate Eve's measurement
             temp_qc = qc.copy()
             job = self.simulator.run(temp_qc, shots=1)
@@ -169,6 +187,7 @@ class BB84Protocol:
             
         # Bob measures normally
         self.bob_measure_qubits()
+        self.check_evesdropping()
         self.sift_key()
         
         print("Notice the increased error rate due to eavesdropping!")
@@ -176,7 +195,7 @@ class BB84Protocol:
 # Example usage and demonstration
 def main():
     # Basic BB84 protocol
-    bb84 = BB84Protocol(key_length=300000)
+    bb84 = BB84Protocol(key_length=10000)
     shared_key = bb84.run_protocol()
     
     # Demonstrate eavesdropping detection
