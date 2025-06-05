@@ -86,7 +86,7 @@ class BB84Protocol:
             if self.alice_bases[i] == self.bob_bases[i]:
                 self.shared_key.append(self.alice_bits[i])
                 matching_indices.append(i)
-                
+        
         # print(f"\nMatching basis indices: {matching_indices}")
         # print(f"Sifted key length: {len(self.shared_key)}")
         # print(f"Alice's sifted key: {self.shared_key}")
@@ -98,21 +98,25 @@ class BB84Protocol:
         # Check for errors (in ideal case, should be identical)
         errors = sum(1 for a, b in zip(self.shared_key, bob_sifted) if a != b)
         error_rate = errors / len(self.shared_key) if self.shared_key else 0
+
+        ## check which is key
+        indices = []
+        for i in range(len(self.check_success_basis)//2+1):
+            indices.append(self.check_success_basis[i])
+        key = [self.bob_results[i] for i in indices]
+        key_in_alice = [self.alice_bits[i] for i in indices]
+
         print(f"Bit error rate: {error_rate:.2%}")
-        
+        # print(f"Key from Bob: {key}")
+        # print(f"Key from Alice: {key_in_alice}")
+        print(f"Final_key is same ? {key == key_in_alice}")
+        self.shared_key = key
         return self.shared_key
     def check_evesdropping(self):
-        for i in range(self.key_length//2):
-            if self.alice_bases[i] == self.bob_bases[i]:
-                self.detect_array.append(1)
-            else:
-                self.detect_array.append(0)
-        ## count correct choose of bases    
-        correct_bases = sum(self.detect_array)
-        for i in range(self.key_length//2):
-            if self.detect_array[i] == 1:
-                if self.alice_bits[i] != self.bob_results[i]:
-                    self.detect_evesdropping = True
+        for i in range(len(self.check_success_basis)//2):
+            if self.alice_bits[self.check_success_basis[i]] != self.bob_results[self.check_success_basis[i]]:
+                self.detect_evesdropping = True
+        
                     # print(f"Error detected at index {i}: Alice's bit {self.alice_bits[i]} != Bob's bit {self.bob_results[i]}")
         print(f"Is there eavesdropping? {self.detect_evesdropping}")
     def run_protocol(self):
@@ -129,6 +133,7 @@ class BB84Protocol:
         
         print("\n3. Bob measures qubits with random bases")
         self.bob_measure_qubits()
+        self.check_success_basis = [i for i in range(self.key_length) if self.alice_bases[i] == self.bob_bases[i]]
         print("\n3.1. Check for eavesdropping")
         self.check_evesdropping()
         print("\n4. Basis comparison and key sifting")
@@ -195,7 +200,7 @@ class BB84Protocol:
 # Example usage and demonstration
 def main():
     # Basic BB84 protocol
-    bb84 = BB84Protocol(key_length=10000)
+    bb84 = BB84Protocol(key_length=500)
     shared_key = bb84.run_protocol()
     
     # Demonstrate eavesdropping detection
