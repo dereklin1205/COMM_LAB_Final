@@ -52,6 +52,7 @@ class E91ProtocolWithEavesdropping:
                 self.diffBalvis_bases.append(self.basesBalvis[i])
         
         print(f"Matching bases found: {len(self.final_key_Asja)} out of {self.key_length}")
+        print(f"Final key for Asja: {len(self.final_key_Asja)}")
         print(f"Key agreement rate: {len(self.final_key_Asja)/self.key_length:.2%}")
         
     def compute_CHSH(self):

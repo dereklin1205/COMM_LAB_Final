@@ -4,7 +4,7 @@ from qiskit_aer import AerSimulator
 from qiskit.visualization import plot_histogram
 import matplotlib.pyplot as plt
 import random
-
+from Phase_flip_channel_esti import BB84ChannelEstimator
 #Registers for measurement bases and keys
 basesAsja, keyAsja = [],[]
 basesBalvis, keyBalvis = [],[]
@@ -40,7 +40,6 @@ class E91Protocol:
         self.compute_CHSH()
         print("E91 protocol completed successfully.")
         print(f"final key is same for Asja and Balvis ? {self.final_key_Asja == self.final_key_Balvis}")
-    def eve_intercept(self):
         
     def compare_bases(self):
         for i in range(self.key_length):
